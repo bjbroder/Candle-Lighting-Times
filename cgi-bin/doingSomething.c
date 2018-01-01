@@ -6,8 +6,7 @@
 
 int main(void) {
     char *buf, *p;
-    char arg1[MAXLINE], arg2[MAXLINE], arg3[MAXLINE], content[MAXLINE]; //inputs??
-    char lat[MAXLINE], lon[MAXLINE], date[MAXLINE];
+    char arg1[MAXLINE], arg2[MAXLINE], arg3[MAXLINE], content[MAXLINE];
 
     /* Extract the two arguments */
     if ((buf = getenv("QUERY_STRING")) != NULL) {
@@ -15,21 +14,22 @@ int main(void) {
 	*p = '\0';
 	strcpy(arg1, buf);
 	strcpy(arg2, p+1);
-	strcpy(arg3, p+2);
     }
     int clientfd;
     char *host, *port;
     rio_t rio;
-    char *buff;
     char *command;
+    char buff[MAXLINE];
+    char buffer[MAXLINE];
     host = "api.sunrise-sunset.org";
     port = "80";
-    command = "GET https://api.sunrise-sunset.org/json?%s&%s&%s",arg2, arg1, arg3;
+    sprintf(buffer, "GET https://api.sunrise-sunset.org/json?%s&%s\n", arg1, arg2);
     clientfd = Open_clientfd(host, port);
     Rio_readinitb(&rio, clientfd);
-    Rio_writen(clientfd, command, 50);
+
+    Rio_writen(clientfd, buffer, MAXLINE);
     Rio_readlineb(&rio, buff, MAXLINE);
-    Fputs(buff, stdout);
+    sprintf(content, "%sConnected to api: %s", content, buff);
 
     //reach out to api and get time back
 
@@ -43,7 +43,7 @@ int main(void) {
     // sprintf(content, "Welcome to Brielle's add.com: ");
     //sprintf(content, "%sTHE Internet addition portal.\r\n<p>", content);
     sprintf(content, "%sThe candlelighting time is: %s\r\n<p>", 
-	    content, date);
+	    content, arg2);
     sprintf(content, "%sThanks for visiting!\r\n", content);
   
     /* Generate the HTTP response */

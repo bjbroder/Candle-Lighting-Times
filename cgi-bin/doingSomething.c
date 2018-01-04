@@ -32,17 +32,34 @@ int main(void) {
 
     Rio_writen(clientfd, buffer, MAXLINE);
     Rio_readlineb(&rio, buff, MAXLINE);
+    char sunset[MAXLINE];
+    char *r = strchr(buff, ',');
+    *r = '\0';
+    strcpy(sunset, r+1);
+    int countColons = 0;
+    int i = 0;
     char gmtTime[5];
-    for(int i = 0; i < 5; i++){
-      if (i == 0 && buff[45] == '\"'){
-	gmtTime[i] = '0';
+    while(countColons < 2){
+      if (sunset[i+10] == ':'){
+	countColons++;
+	if (countColons == 2){
+	  break;
       }
-      else{
-	gmtTime[i] = buff[45+i];
       }
-    
+      gmtTime[i] = sunset[10+i];
+      i++;
     }
-
+    // for(int i = 0; i < 5; i++){
+    //if (i == 0 && sunset[10] == '\"'){
+    //	gmtTime[i] = '0';
+    //}
+    //else{
+    //	gmtTime[i] = buff[10+i];
+    //}
+    
+    //}
+    
+    //sprintf(content, "%s%s", content, time);
     sprintf(content, "%s%s", content, gmtTime);
     //reach out to api and get time back
 

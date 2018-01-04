@@ -13,7 +13,10 @@ int main(void) {
 	p = strchr(buf, '&');
 	*p = '\0';
 	strcpy(arg1, buf);
+	char *b = strchr(p+1, '&');
+	*b = '\0';
 	strcpy(arg2, p+1);
+	strcpy(arg3, b+1);
     }
     int clientfd;
     char *host, *port;
@@ -23,14 +26,24 @@ int main(void) {
     char buffer[MAXLINE];
     host = "api.sunrise-sunset.org";
     port = "80";
-    sprintf(buffer, "GET https://api.sunrise-sunset.org/json?%s&%s\n", arg1, arg2);
+    sprintf(buffer, "GET https://api.sunrise-sunset.org/json?%s&%s&%s\n", arg1, arg2, arg3);
     clientfd = Open_clientfd(host, port);
     Rio_readinitb(&rio, clientfd);
 
     Rio_writen(clientfd, buffer, MAXLINE);
     Rio_readlineb(&rio, buff, MAXLINE);
-    sprintf(content, "%sConnected to api: %s", content, buff);
+    char gmtTime[5];
+    for(int i = 0; i < 5; i++){
+      if (i == 0 && buff[45] == '\"'){
+	gmtTime[i] = '0';
+      }
+      else{
+	gmtTime[i] = buff[45+i];
+      }
+    
+    }
 
+    sprintf(content, "%s%s", content, gmtTime);
     //reach out to api and get time back
 
     //somehow split on colon of time
@@ -43,7 +56,7 @@ int main(void) {
     // sprintf(content, "Welcome to Brielle's add.com: ");
     //sprintf(content, "%sTHE Internet addition portal.\r\n<p>", content);
     sprintf(content, "%sThe candlelighting time is: %s\r\n<p>", 
-	    content, arg2);
+	    content, arg3);
     sprintf(content, "%sThanks for visiting!\r\n", content);
   
     /* Generate the HTTP response */

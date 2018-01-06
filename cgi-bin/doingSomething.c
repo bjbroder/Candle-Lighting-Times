@@ -36,6 +36,7 @@ int main(void) {
     char *r = strchr(buff, ',');
     *r = '\0';
     strcpy(sunset, r+1);
+
     int countColons = 0;
     int i = 0;
     char gmtTime[5];
@@ -49,19 +50,24 @@ int main(void) {
       gmtTime[i] = sunset[10+i];
       i++;
     }
-    // for(int i = 0; i < 5; i++){
-    //if (i == 0 && sunset[10] == '\"'){
-    //	gmtTime[i] = '0';
-    //}
-    //else{
-    //	gmtTime[i] = buff[10+i];
-    //}
-    
-    //}
-    
-    //sprintf(content, "%s%s", content, time);
+
     sprintf(content, "%s%s", content, gmtTime);
     //reach out to api and get time back
+
+    host = "api.timezonedb.com";
+    port = "80";
+    sprintf(buffer, "GET https://api.sunrise-sunset.org/json?%s&%s&%s\n", arg1, arg2, arg3);
+    sprintf(buffer, "GET http://api.timezonedb.com/v2/get-time-zone?key=842Z7KTEY3QI&format=json&by=position&lat=%s&lng=%s&time=%s\n",arg1,arg2,gmtTime)
+     
+
+    clientfd = Open_clientfd(host, port);
+    Rio_readinitb(&rio, clientfd);
+
+    Rio_writen(clientfd, buffer, MAXLINE);
+    Rio_readlineb(&rio, buff, MAXLINE);
+    
+     sprintf(content, "%s%s", content, buff);
+
 
     //somehow split on colon of time
     //if (minutes > 17)  lightingTime = hours + ":" + str(minutes - 18);

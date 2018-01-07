@@ -21,29 +21,28 @@ int main(void) {
     int clientfd;
     char *host, *port;
     rio_t rio;
-    char *command;
     char buff[MAXLINE];
     char buffer[MAXLINE];
     
     host = "api.sunrise-sunset.org";
     port = "80";
-    sprintf(buffer, "GET https://api.sunrise-sunset.org/json?%s&%s&%s\n", arg1, arg2, arg3);
+    sprintf(buffer, "GET https://api.sunrise-sunset.org/json?%s&%s&%s\n", arg1, arg2, arg3); //Saves the GET request in a buffer
     
-    clientfd = Open_clientfd(host, port);
+    clientfd = Open_clientfd(host, port); //Opens connection between client and server
     Rio_readinitb(&rio, clientfd);
 
-    Rio_writen(clientfd, buffer, MAXLINE);
-    Rio_readlineb(&rio, buff, MAXLINE);
+    Rio_writen(clientfd, buffer, MAXLINE); //Writes the request to the API
+    Rio_readlineb(&rio, buff, MAXLINE); //Reads the response into buff
 
-    Close(clientfd);
+    Close(clientfd); //Closes the connection
 
     
     sprintf(content,"%s%s\n",content,buff);
     
     char sunset[MAXLINE];
-    char *r = strchr(buff, ',');
+    char *r = strchr(buff, ','); //splits the response on the comma 
     *r = '\0';
-    strcpy(sunset, r+1);
+    strcpy(sunset, r+1); //Saves what's after the comma in sunset 
 
     int countColons = 0;
     int i = 0;
@@ -51,7 +50,7 @@ int main(void) {
     int m = 0;
     char gmtHour[3];
     char gmtMinute[3];
-
+    //Extracts the time of sunset from the sunset string 
     while(countColons < 2){
       if (sunset[i+10] == ':')
 	{
@@ -86,19 +85,19 @@ int main(void) {
     
     sprintf(buffer, "GET http://api.timezonedb.com/v2/get-time-zone?key=842Z7KTEY3QI&format=json&by=position&%s&%s\n",arg1,arg2);
      
-    clientfd = Open_clientfd(host, port);
+    clientfd = Open_clientfd(host, port); //Opens a connection 
     Rio_readinitb(&rio, clientfd);
 
-    Rio_writen(clientfd, buffer, MAXLINE);
-    Rio_readlineb(&rio, buff, MAXLINE);
+    Rio_writen(clientfd, buffer, MAXLINE); //sends another request to a different API
+    Rio_readlineb(&rio, buff, MAXLINE); //Reads the response 
 
-    Close(clientfd);
+    Close(clientfd); //Closes the connection
 
     
     int j = 95;
     int foundTime = 0;
     char zoneDiff[MAXLINE]; 
-	
+    //Finds the zone difference between GMT time and the lat and long entered 
     if (buff[11] != 'O')
       {
        sprintf(content,"%sFailed to get candlighting time\n",content);
@@ -140,7 +139,9 @@ int main(void) {
     if (ghour == 1) ghour = 13;
     int hour = ghour + zone;
     if (hour > 12) hour = 12 - hour;
-    
+    if (hour <= 0) hour = 12 + hour;
+
+    //Subtracts 18 minutes from sunset time to get candle lighting time
     int min = 0;
 
     if(gminute >= 18) min = gminute - 18;

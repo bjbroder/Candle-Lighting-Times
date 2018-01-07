@@ -56,8 +56,10 @@ int main(void) {
 
     host = "api.timezonedb.com";
     port = "80";
-    sprintf(buffer, "GET https://api.sunrise-sunset.org/json?%s&%s&%s\n", arg1, arg2, arg3);
-    sprintf(buffer, "GET http://api.timezonedb.com/v2/get-time-zone?key=842Z7KTEY3QI&format=json&by=position&lat=%s&lng=%s&time=%s\n",arg1,arg2,gmtTime)
+
+    sprintf(content,"%s%s\n",content,arg1);
+    
+    sprintf(buffer, "GET http://api.timezonedb.com/v2/get-time-zone?key=842Z7KTEY3QI&format=json&by=position&%s&%s\n",arg1,arg2);
      
 
     clientfd = Open_clientfd(host, port);
@@ -66,9 +68,47 @@ int main(void) {
     Rio_writen(clientfd, buffer, MAXLINE);
     Rio_readlineb(&rio, buff, MAXLINE);
     
-     sprintf(content, "%s%s", content, buff);
+    //sprintf(content, "%sThis is the content from the api:\n%s", content, buff);
+    // sprintf(content, "%sThis is char 11: %c\n", content, buff[11]);
 
+    int j = 95;
+    int foundTime = 0;
+    char zoneDiff[MAXLINE]; 
+	
+    if (buff[11] != 'O')
+       sprintf(content,"%sGetting Candlighting Time Failed\n",content);
+    else
+      {
+	//	sprintf(content,"%sStarting to check letters from%c\n",content,buff[95]);
+	while (foundTime == 0)
+	  {
+	    if (buff[j] == 'g' && buff[j+1] == 'm' && buff[j+2] == 't')
+	      {
+		int k = j+11;
+		int l = 0;
+		while (buff[k] != ',')
+		  {
+		    zoneDiff[l] = buff[k];
+		    k++;
+		    l++;
+		  }
+		foundTime = 1;
+		l++;
+		zoneDiff[l] = '\0';
+		sprintf(content,"%s%s\n",content,zoneDiff);
+	      }
+	    else
+	      j++;
+	  }
+      }
 
+    int zone;
+    sscanf(zoneDiff, "%d", &zone);
+
+    zone = zone / 60 / 60;
+
+    sprintf(content,"%sZone is: %d\n",content,zone);
+    
     //somehow split on colon of time
     //if (minutes > 17)  lightingTime = hours + ":" + str(minutes - 18);
     //else

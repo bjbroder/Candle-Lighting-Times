@@ -1,14 +1,14 @@
 /*
- * adder.c - a minimal CGI program that adds two numbers together
+ * doingSomething.c - a minimal CGI program that does something; specifically, it takes a lat, long, and the date and returns the appropriate candle lighting time
  */
-/* $begin adder */
+
 #include "csapp.h"
 
 int main(void) {
     char *buf, *p;
     char arg1[MAXLINE], arg2[MAXLINE], arg3[MAXLINE], content[MAXLINE];
 
-    /* Extract the two arguments */
+    /* Extract the three arguments */
     if ((buf = getenv("QUERY_STRING")) != NULL) {
 	p = strchr(buf, '&');
 	*p = '\0';
@@ -24,14 +24,22 @@ int main(void) {
     char *command;
     char buff[MAXLINE];
     char buffer[MAXLINE];
+    
     host = "api.sunrise-sunset.org";
     port = "80";
     sprintf(buffer, "GET https://api.sunrise-sunset.org/json?%s&%s&%s\n", arg1, arg2, arg3);
+    
     clientfd = Open_clientfd(host, port);
     Rio_readinitb(&rio, clientfd);
 
     Rio_writen(clientfd, buffer, MAXLINE);
     Rio_readlineb(&rio, buff, MAXLINE);
+
+    Close(clientfd);
+
+    
+    sprintf(content,"%s%s\n",content,buff);
+    
     char sunset[MAXLINE];
     char *r = strchr(buff, ',');
     *r = '\0';
@@ -39,47 +47,65 @@ int main(void) {
 
     int countColons = 0;
     int i = 0;
-    char gmtTime[5];
+    int h = 0;
+    int m = 0;
+    char gmtHour[3];
+    char gmtMinute[3];
+
     while(countColons < 2){
-      if (sunset[i+10] == ':'){
-	countColons++;
-	if (countColons == 2){
-	  break;
-      }
-      }
-      gmtTime[i] = sunset[10+i];
+      if (sunset[i+10] == ':')
+	{
+	  countColons++;
+	  if (countColons == 2)
+	    {
+	      break;
+	    }
+	}
+      else
+	{
+	  if (countColons == 0){
+	    gmtHour[h] = sunset[10+i];
+	    h++;
+	  }
+	  else{
+	    gmtMinute[m] = sunset[10+i];
+	    m++;
+	  }
+	}
       i++;
     }
 
-    sprintf(content, "%s%s", content, gmtTime);
-    //reach out to api and get time back
+    gmtHour[2] = '\0';
+    gmtMinute[2] = '\0';
 
+    sprintf(content, "%s%s\n", content,gmtHour);
+    
+    //reach out to api and get time back
     host = "api.timezonedb.com";
     port = "80";
-
-    sprintf(content,"%s%s\n",content,arg1);
     
     sprintf(buffer, "GET http://api.timezonedb.com/v2/get-time-zone?key=842Z7KTEY3QI&format=json&by=position&%s&%s\n",arg1,arg2);
      
-
     clientfd = Open_clientfd(host, port);
     Rio_readinitb(&rio, clientfd);
 
     Rio_writen(clientfd, buffer, MAXLINE);
     Rio_readlineb(&rio, buff, MAXLINE);
-    
-    //sprintf(content, "%sThis is the content from the api:\n%s", content, buff);
-    // sprintf(content, "%sThis is char 11: %c\n", content, buff[11]);
 
+    Close(clientfd);
+
+    
     int j = 95;
     int foundTime = 0;
     char zoneDiff[MAXLINE]; 
 	
     if (buff[11] != 'O')
-       sprintf(content,"%sGetting Candlighting Time Failed\n",content);
+      {
+       sprintf(content,"%sFailed to get candlighting time\n",content);
+       //add in other print statements here and exit
+      }
     else
       {
-	//	sprintf(content,"%sStarting to check letters from%c\n",content,buff[95]);
 	while (foundTime == 0)
 	  {
 	    if (buff[j] == 'g' && buff[j+1] == 'm' && buff[j+2] == 't')
@@ -95,7 +121,6 @@ int main(void) {
 		foundTime = 1;
 		l++;
 		zoneDiff[l] = '\0';
-		sprintf(content,"%s%s\n",content,zoneDiff);
 	      }
 	    else
 	      j++;
@@ -104,24 +129,41 @@ int main(void) {
 
     int zone;
     sscanf(zoneDiff, "%d", &zone);
-
     zone = zone / 60 / 60;
-
-    sprintf(content,"%sZone is: %d\n",content,zone);
     
-    //somehow split on colon of time
-    //if (minutes > 17)  lightingTime = hours + ":" + str(minutes - 18);
-    //else
-       //remainder = 18 - minutes
-       //lightingTime = str(hours-1) + ":" + (60-remainder)
+    int ghour;
+    sscanf(gmtHour, "%d", &ghour);
 
-    /* Make the response body */
-    // sprintf(content, "Welcome to Brielle's add.com: ");
-    //sprintf(content, "%sTHE Internet addition portal.\r\n<p>", content);
-    sprintf(content, "%sThe candlelighting time is: %s\r\n<p>", 
-	    content, arg3);
+    int gminute;
+    sscanf(gmtMinute, "%d", &gminute);
+
+    if (ghour == 1) ghour = 13;
+    int hour = ghour + zone;
+    if (hour > 12) hour = 12 - hour;
+    
+    int min = 0;
+
+    if(gminute >= 18) min = gminute - 18;
+    else
+      {
+	int remainder = 18 - gminute;
+	hour--;
+	min = 60 - remainder;
+      }
+
+
+    /* Response body */
+    /*            sprintf(content,"%s%d\n", content,hour);
+    sprintf(content, "%szone = %d\r\n",content, zone);
+    sprintf(content, "%szoneDiff = %s\r\n",content, zoneDiff);
+    */ 
+    
+    sprintf(content, "<h1>Welcome to Brielle & Paulette's Webpage!<h1>");
+    sprintf(content, "%sThe candlelighting time when %s\r\n",content,arg3);
+    sprintf(content, "%sand location is %s, %s is\r\n<p>",content,arg1,arg2);
+    sprintf(content, "%s%d:%02d\r\n<p>",content, hour, min);
     sprintf(content, "%sThanks for visiting!\r\n", content);
-  
+    
     /* Generate the HTTP response */
     printf("Connection: close\r\n");
     printf("Content-length: %d\r\n", (int)strlen(content));
@@ -131,4 +173,5 @@ int main(void) {
 
     exit(0);
 }
-/* $end adder */
+/*end of doingSomething.c*/
+
